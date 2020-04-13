@@ -10,10 +10,10 @@ config.read('dwh.cfg')
 staging_events_table_drop = "DROP TABLE IF EXISTS staging_events"
 staging_songs_table_drop = "DROP TABLE IF EXISTS staging_songs"
 songplay_table_drop = "DROP TABLE IF EXISTS songplay"
-user_table_drop = "DROP TABLE IF EXISTS dim_user"
-song_table_drop = "DROP TABLE IF EXISTS dim_song"
-artist_table_drop = "DROP TABLE IF EXISTS dim_artist"
-time_table_drop = "DROP TABLE IF EXISTS dim_time"
+user_table_drop = "DROP TABLE IF EXISTS users"
+song_table_drop = "DROP TABLE IF EXISTS songs"
+artist_table_drop = "DROP TABLE IF EXISTS artists"
+time_table_drop = "DROP TABLE IF EXISTS time"
 
 # CREATE TABLES
 
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS songplay (
 # Dimension Tables
 # users - users in the app
 user_table_create = ("""
-CREATE TABLE IF NOT EXISTS dim_user (
+CREATE TABLE IF NOT EXISTS users (
     user_id     INTEGER PRIMARY KEY, 
     first_name  VARCHAR, 
     last_name   VARCHAR, 
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS dim_user (
 
 # songs - songs in music database
 song_table_create = ("""
-CREATE TABLE IF NOT EXISTS dim_song (
+CREATE TABLE IF NOT EXISTS songs (
     song_id     VARCHAR PRIMARY KEY, 
     title       VARCHAR, 
     artist_id   VARCHAR, 
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS dim_song (
 
 # artists - artists in music database
 artist_table_create = ("""
-CREATE TABLE IF NOT EXISTS dim_artist (
+CREATE TABLE IF NOT EXISTS artists (
     artist_id   VARCHAR PRIMARY KEY, 
     name        VARCHAR, 
     location    VARCHAR, 
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS dim_artist (
 
 # time - timestamps of records in songplays broken down into specific units
 time_table_create = ("""
-CREATE TABLE IF NOT EXISTS dim_time (
+CREATE TABLE IF NOT EXISTS time (
     start_time  TIMESTAMP   PRIMARY KEY, 
     hour        INTEGER, 
     day         INTEGER, 
@@ -150,10 +150,11 @@ SELECT  TIMESTAMP 'epoch' + ts/1000 * interval '1 second' AS start_time,
 FROM staging_events
 INNER JOIN staging_songs
 ON staging_events.artist = staging_songs.artist_name AND staging_events.song = staging_songs.title
+WHERE page = 'NextSong'
 """)
 
 user_table_insert = ("""
-INSERT INTO dim_user (user_id, first_name, last_name, gender, level)
+INSERT INTO users (user_id, first_name, last_name, gender, level)
 SELECT  userId AS user_id,
         firstName AS first_name,
         lastName AS last_name,
@@ -164,14 +165,14 @@ WHERE userId IS NOT NULL
 """)
 
 song_table_insert = ("""
-INSERT INTO dim_song (song_id,title, artist_id, year, duration)
+INSERT INTO songs (song_id,title, artist_id, year, duration)
 SELECT song_id, title, artist_id, year, duration
 FROM staging_songs
 WHERE song_id IS NOT NULL
 """)
 
 artist_table_insert = ("""
-INSERT INTO dim_artist (artist_id, name, location, latitude, longitude)
+INSERT INTO artists (artist_id, name, location, latitude, longitude)
 SELECT  artist_id, 
         artist_name AS name, 
         artist_location AS location, 
@@ -182,7 +183,7 @@ WHERE artist_id IS NOT NULL
 """)
 
 time_table_insert = ("""
-INSERT INTO dim_time (start_time, hour, day, week, month, year, weekday)
+INSERT INTO time (start_time, hour, day, week, month, year, weekday)
 SELECT  TIMESTAMP 'epoch' + ts/1000 * interval '1 second' AS start_time,
         EXTRACT(hour from TIMESTAMP 'epoch' + ts/1000 * interval '1 second') AS hour,
         EXTRACT(day from TIMESTAMP 'epoch' + ts/1000 * interval '1 second') AS day,
