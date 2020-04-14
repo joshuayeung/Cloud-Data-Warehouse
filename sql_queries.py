@@ -155,7 +155,7 @@ WHERE page = 'NextSong'
 
 user_table_insert = ("""
 INSERT INTO users (user_id, first_name, last_name, gender, level)
-SELECT  userId AS user_id,
+SELECT  DISTINCT userId AS user_id,
         firstName AS first_name,
         lastName AS last_name,
         gender,
@@ -166,14 +166,14 @@ WHERE userId IS NOT NULL
 
 song_table_insert = ("""
 INSERT INTO songs (song_id,title, artist_id, year, duration)
-SELECT song_id, title, artist_id, year, duration
+SELECT DISTINCT song_id, title, artist_id, year, duration
 FROM staging_songs
 WHERE song_id IS NOT NULL
 """)
 
 artist_table_insert = ("""
 INSERT INTO artists (artist_id, name, location, latitude, longitude)
-SELECT  artist_id, 
+SELECT  DISTINCT artist_id, 
         artist_name AS name, 
         artist_location AS location, 
         artist_latitude AS latitude, 
@@ -184,7 +184,7 @@ WHERE artist_id IS NOT NULL
 
 time_table_insert = ("""
 INSERT INTO time (start_time, hour, day, week, month, year, weekday)
-SELECT  TIMESTAMP 'epoch' + ts/1000 * interval '1 second' AS start_time,
+SELECT  DISTINCT TIMESTAMP 'epoch' + ts/1000 * interval '1 second' AS start_time,
         EXTRACT(hour from TIMESTAMP 'epoch' + ts/1000 * interval '1 second') AS hour,
         EXTRACT(day from TIMESTAMP 'epoch' + ts/1000 * interval '1 second') AS day,
         EXTRACT(week from TIMESTAMP 'epoch' + ts/1000 * interval '1 second') AS week,
